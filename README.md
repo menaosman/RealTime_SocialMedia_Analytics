@@ -62,6 +62,10 @@ You can use the included `ready_for_streamlit.csv` for testing, or upload your o
 ## 👩‍💻 Author
 
 Mena Osman  
+Computer Engineer
+Mariam Eslam  
+AI Engineer
+Nayera Ibrahime, Mariam Mostafa, yomna refaat,reem ramada
 Biomedical Informatics | 2025  
 GitHub: [@menaosman](https://github.com/menaosman)
 
