@@ -1,9 +1,5 @@
 import streamlit as st
 import pandas as pd
-import os
-
-# Configure paths for Colab
-os.makedirs('/content/.streamlit/logs', exist_ok=True)
 
 st.set_page_config(layout="wide")
 st.title("Real-Time Social Media Analysis")
