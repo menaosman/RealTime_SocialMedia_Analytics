@@ -36,9 +36,15 @@ Click below to begin your analysis.
 """)
 
 uploaded_file = st.file_uploader("📂 Upload a CSV file with a 'Text' column", type=["csv"])
-start = st.button("🚀 Start Sentiment Analysis")
 
-if start and uploaded_file:
+# Add session state for button persistence
+if "start_clicked" not in st.session_state:
+    st.session_state.start_clicked = False
+
+if st.button("🚀 Start Sentiment Analysis"):
+    st.session_state.start_clicked = True
+
+if uploaded_file and st.session_state.start_clicked:
     df = pd.read_csv(uploaded_file)
     df.columns = df.columns.str.strip().str.lower()
 
@@ -90,11 +96,10 @@ if start and uploaded_file:
         st.subheader("🔎 Filter by Keyword")
         keyword = st.text_input("Enter a keyword to search for tweets:")
         if keyword:
-            keyword_df = df[df['Text'].str.contains(keyword, case=False, na=False)]
+            keyword_df = df[df['text'].str.contains(keyword, case=False, na=False)]
             st.write(f"Found {len(keyword_df)} tweets containing '{keyword}':")
-            st.dataframe(keyword_df[['Text', 'Sentiment']])
+            st.dataframe(keyword_df[['text', 'Sentiment']])
             st.bar_chart(keyword_df['Sentiment'].value_counts())
-
 
         st.subheader("🧮 Sentiment Summary")
         counts = df['Sentiment'].value_counts()
