@@ -6,40 +6,23 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from wordcloud import WordCloud
 
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="wide")
-
 st.title("📊 Tweet Sentiment Analyzer")
 
-# ✅ Add this block right after the title
-from streamlit_lottie import st_lottie
-import requests
-
-def load_lottie_url(url):
-    r = requests.get(url)
-    if r.status_code != 200:
-        return None
-    return r.json()
-
-# Example animation URL (you can replace with another from LottieFiles)
-# ✅ With this working one:
-lottie_banner = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_puciaact.json")
-if lottie_banner:
-    st_lottie(lottie_banner, height=300)
-else:
-    st.warning("⚠️ Animation failed to load. Check your internet or animation link.")
-
-
-# Then continue with your welcome message
-st.markdown("""
-Welcome to the **Tweet Sentiment Analyzer**! 👋
-
+# ✅ Landing with image in layout
+col1, col2 = st.columns([2, 3])
+with col1:
+    st.markdown("### Welcome to the **Tweet Sentiment Analyzer**! 👋")
+    st.markdown("""
 Upload your dataset to:
+
 - ✅ Detect sentiment (positive, neutral, negative)
 - 🌥 Generate WordClouds
 - 📈 Track sentiment trends over time
 - 🔍 Filter tweets by keywords
+    """)
 
-Click below to begin your analysis.
-""")
+with col2:
+    st.image("https://i.imgur.com/Wo7CVwG.png", use_column_width=True)
 
 start = st.button("🚀 Start Sentiment Analysis")
 
@@ -67,22 +50,18 @@ if start:
             st.success("✅ Sentiment analysis completed!")
             st.dataframe(df[['Text', 'Sentiment']])
 
-            # Download button
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button("⬇️ Download Results as CSV", csv, "sentiment_results.csv", "text/csv")
 
-            # Show sentiment distribution (basic)
             st.subheader("📈 Sentiment Distribution (Bar Chart)")
             st.bar_chart(df['Sentiment'].value_counts())
 
-            # Filtered view
             sentiment_filter = st.selectbox("🔍 Filter by Sentiment", ['all', 'positive', 'neutral', 'negative'])
             if sentiment_filter != 'all':
                 filtered_df = df[df['Sentiment'] == sentiment_filter]
                 st.write(f"Showing {len(filtered_df)} {sentiment_filter} tweets:")
                 st.dataframe(filtered_df[['Text', 'Sentiment']])
 
-            # --- WordClouds ---
             st.subheader("🌥 WordClouds by Sentiment")
             for sentiment in ['positive', 'neutral', 'negative']:
                 subset = df[df['Sentiment'] == sentiment]
@@ -97,7 +76,6 @@ if start:
                 else:
                     st.warning(f"No {sentiment} tweets available for WordCloud.")
 
-            # --- Keyword Filter ---
             st.subheader("🔎 Filter by Keyword")
             keyword = st.text_input("Enter a keyword to search for tweets:")
             if keyword:
@@ -106,19 +84,16 @@ if start:
                 st.dataframe(keyword_df[['Text', 'Sentiment']])
                 st.bar_chart(keyword_df['Sentiment'].value_counts())
 
-            # --- Sentiment Summary ---
             st.subheader("🧮 Sentiment Summary")
             counts = df['Sentiment'].value_counts()
             st.write(counts)
 
-            # --- Pie Chart ---
             st.subheader("📊 Sentiment Breakdown (Pie Chart)")
             fig1, ax1 = plt.subplots()
             ax1.pie(counts, labels=counts.index, autopct='%1.1f%%', startangle=90)
             ax1.axis('equal')
             st.pyplot(fig1)
 
-            # --- Sentiment Over Time ---
             if 'Timestamp' in df.columns:
                 st.subheader("🕒 Sentiment Over Time")
                 df['Timestamp'] = pd.to_datetime(df['Timestamp'])
