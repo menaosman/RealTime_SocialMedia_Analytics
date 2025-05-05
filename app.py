@@ -23,7 +23,10 @@ def load_lottie_url(url):
 # ✅ With this working one:
 lottie_banner = load_lottie_url("https://lottie.host/cc0b22bb-3ad1-4be1-a59e-62ffebce2ec8/nkA6VuopOj.json")
 
-st_lottie(lottie_banner, height=300)
+if lottie_banner:
+    st_lottie(lottie_banner, height=300)
+else:
+    st.warning("⚠️ Animation failed to load. Check your internet or animation link.")
 
 # Then continue with your welcome message
 st.markdown("""
