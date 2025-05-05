@@ -20,7 +20,9 @@ def load_lottie_url(url):
     return r.json()
 
 # Example animation URL (you can replace with another from LottieFiles)
-lottie_banner = load_lottie_url("https://lottie.host/989a9c0e-9d1c-4c67-a81a-28577216dfb6/LV7RjVJ1Ql.json")
+# ✅ With this working one:
+lottie_banner = load_lottie_url("https://lottie.host/cc0b22bb-3ad1-4be1-a59e-62ffebce2ec8/nkA6VuopOj.json")
+
 st_lottie(lottie_banner, height=300)
 
 # Then continue with your welcome message
