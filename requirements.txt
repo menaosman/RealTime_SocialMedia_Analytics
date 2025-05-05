@@ -3,3 +3,4 @@ pandas
 vaderSentiment
 matplotlib
 wordcloud
+streamlit-lottie
