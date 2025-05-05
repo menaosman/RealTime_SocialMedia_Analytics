@@ -4,3 +4,4 @@ vaderSentiment
 matplotlib
 wordcloud
 streamlit-lottie
+requests
