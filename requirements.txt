@@ -1,7 +1,9 @@
 streamlit
 pandas
-vaderSentiment
 matplotlib
+seaborn
 wordcloud
-streamlit-lottie
+pymongo
 requests
+streamlit-lottie
+streamlit-autorefresh
