@@ -9,7 +9,21 @@ st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="wide")
 
 st.title("📊 Tweet Sentiment Analyzer")
 
-# Landing Page Section
+# ✅ Add this block right after the title
+from streamlit_lottie import st_lottie
+import requests
+
+def load_lottie_url(url):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+# Example animation URL (you can replace with another from LottieFiles)
+lottie_banner = load_lottie_url("https://lottie.host/989a9c0e-9d1c-4c67-a81a-28577216dfb6/LV7RjVJ1Ql.json")
+st_lottie(lottie_banner, height=300)
+
+# Then continue with your welcome message
 st.markdown("""
 Welcome to the **Tweet Sentiment Analyzer**! 👋
 
