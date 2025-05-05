@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from wordcloud import WordCloud
 
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="wide")
 st.title("📊 Tweet Sentiment Analyzer")
@@ -45,7 +46,31 @@ if uploaded_file:
             st.write(f"Showing {len(filtered_df)} {sentiment_filter} tweets:")
             st.dataframe(filtered_df[['Text', 'Sentiment']])
 
-        # --- Summary Counts ---
+        # --- WordClouds ---
+        st.subheader("🌥 WordClouds by Sentiment")
+        for sentiment in ['positive', 'neutral', 'negative']:
+            subset = df[df['Sentiment'] == sentiment]
+            text = " ".join(subset['Text'].astype(str))
+            if text:
+                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+                st.markdown(f"#### {sentiment.capitalize()} Tweets")
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis('off')
+                st.pyplot(fig)
+            else:
+                st.warning(f"No {sentiment} tweets available for WordCloud.")
+
+        # --- Keyword Filter ---
+        st.subheader("🔎 Filter by Keyword")
+        keyword = st.text_input("Enter a keyword to search for tweets:")
+        if keyword:
+            keyword_df = df[df['Text'].str.contains(keyword, case=False, na=False)]
+            st.write(f"Found {len(keyword_df)} tweets containing '{keyword}':")
+            st.dataframe(keyword_df[['Text', 'Sentiment']])
+            st.bar_chart(keyword_df['Sentiment'].value_counts())
+
+        # --- Sentiment Summary ---
         st.subheader("🧮 Sentiment Summary")
         counts = df['Sentiment'].value_counts()
         st.write(counts)
