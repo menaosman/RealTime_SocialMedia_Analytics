@@ -22,8 +22,7 @@ Upload your dataset to:
     """)
 
 with col2:
-   st.image("https://i.imgur.com/Wo7CVwG.png", use_container_width=True)
-
+    st.image("https://i.imgur.com/Wo7CVwG.png", use_container_width=True)
 
 start = st.button("🚀 Start Sentiment Analysis")
 
