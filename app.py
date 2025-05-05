@@ -90,10 +90,11 @@ if start and uploaded_file:
         st.subheader("🔎 Filter by Keyword")
         keyword = st.text_input("Enter a keyword to search for tweets:")
         if keyword:
-            keyword_df = df[df['text'].str.contains(keyword, case=False, na=False)]
+            keyword_df = df[df['Text'].str.contains(keyword, case=False, na=False)]
             st.write(f"Found {len(keyword_df)} tweets containing '{keyword}':")
-            st.dataframe(keyword_df[['text', 'Sentiment']])
+            st.dataframe(keyword_df[['Text', 'Sentiment']])
             st.bar_chart(keyword_df['Sentiment'].value_counts())
+
 
         st.subheader("🧮 Sentiment Summary")
         counts = df['Sentiment'].value_counts()
