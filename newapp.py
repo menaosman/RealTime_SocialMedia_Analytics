@@ -128,7 +128,6 @@ with tab5:
                 st.warning("⚠️ No data to upload.")
         except Exception as e:
             st.error(f"❌ Upload failed: {e}")
-st.write("✅ Fetch function reached, displaying data now...")
 
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
@@ -138,28 +137,24 @@ with tab6:
             client = MongoClient(mongo_uri)
             collection = client["sentiment_analysis"]["tweets"]
             cursor = collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1})
-
             data = list(cursor)
 
             if data:
                 st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
 
-                # Convert to DataFrame
                 df_mongo = pd.DataFrame(data)
 
-                # Parse timestamp if present
+                # Parse timestamp and show raw sample
                 if "Timestamp" in df_mongo.columns:
                     df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
 
-                # Show raw JSON for verification
-                st.markdown("### 🔧 Raw MongoDB Data")
+                st.markdown("### 🛠 Raw Preview")
                 st.json(data[:2])
 
-                # Display table
-                st.markdown("### 📋 MongoDB Tweets")
+                st.markdown("### 📋 All MongoDB Tweets")
+                st.write("Detected columns:", df_mongo.columns.tolist())
                 st.dataframe(df_mongo, use_container_width=True)
             else:
                 st.warning("⚠️ No documents found in MongoDB.")
-
         except Exception as e:
             st.error(f"❌ MongoDB fetch error: {e}")
