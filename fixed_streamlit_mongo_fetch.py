@@ -28,6 +28,7 @@ with tab6:
                 mongo_uri,
                 tls=True,
                 tlsAllowInvalidCertificates=True
+                serverSelectionTimeoutMS=30000, 
             )
             collection = client["sentiment_analysis"]["tweets"]
             cursor = collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1})
