@@ -136,25 +136,26 @@ with tab6:
         try:
             client = MongoClient(mongo_uri)
             collection = client["sentiment_analysis"]["tweets"]
-            cursor = collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1})
-            data = list(cursor)
+            documents = list(collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1}))
 
-            if data:
-                st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
+            if not documents:
+                st.warning("⚠️ No documents found in MongoDB.")
+            else:
+                st.success(f"✅ Retrieved {len(documents)} tweets from MongoDB.")
 
-                df_mongo = pd.DataFrame(data)
+                # Show raw preview
+                st.markdown("### 🧾 Sample Raw Records")
+                st.json(documents[:2])
 
-                # Parse timestamp and show raw sample
+                # Create DataFrame
+                df_mongo = pd.DataFrame(documents)
+
+                # Convert Timestamp
                 if "Timestamp" in df_mongo.columns:
                     df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
 
-                st.markdown("### 🛠 Raw Preview")
-                st.json(data[:2])
-
-                st.markdown("### 📋 All MongoDB Tweets")
-                st.write("Detected columns:", df_mongo.columns.tolist())
+                st.markdown("### 📋 MongoDB Tweet Records")
                 st.dataframe(df_mongo, use_container_width=True)
-            else:
-                st.warning("⚠️ No documents found in MongoDB.")
+
         except Exception as e:
-            st.error(f"❌ MongoDB fetch error: {e}")
+            st.error(f"❌ MongoDB Fetch Error: {e}")
