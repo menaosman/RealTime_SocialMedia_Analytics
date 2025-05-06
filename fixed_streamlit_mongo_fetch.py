@@ -16,7 +16,13 @@ from pymongo import MongoClient
 mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # Dummy for layout simulation
-tab1, tab2, tab3, tab4, tab5, tab6 = [None]*6
+# Create tabs first
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
+    "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
+])
+
+
 
 
 with tab6:
