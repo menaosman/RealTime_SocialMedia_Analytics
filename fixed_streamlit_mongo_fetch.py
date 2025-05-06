@@ -13,7 +13,8 @@ import requests
 from streamlit_lottie import st_lottie
 from pymongo import MongoClient
 
-mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+mongo_uri = st.secrets["MONGO_URI"]
+
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
     "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
