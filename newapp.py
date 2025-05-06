@@ -128,43 +128,38 @@ with tab5:
                 st.warning("⚠️ No data to upload.")
         except Exception as e:
             st.error(f"❌ Upload failed: {e}")
+st.write("✅ Fetch function reached, displaying data now...")
 
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
+
     if st.button("Fetch from MongoDB"):
         try:
             client = MongoClient(mongo_uri)
-            db = client["sentiment_analysis"]
-            collection = db["tweets"]
-            documents = list(collection.find())
+            collection = client["sentiment_analysis"]["tweets"]
+            cursor = collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1})
 
-            st.write(f"🔍 Fetched {len(documents)} records from MongoDB.")
+            data = list(cursor)
 
-            if not documents:
-                st.warning("⚠️ No documents found in MongoDB.")
-            else:
+            if data:
+                st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
+
                 # Convert to DataFrame
-                df_mongo = pd.DataFrame(documents)
+                df_mongo = pd.DataFrame(data)
 
-                # Ensure _id is string
-                if "_id" in df_mongo.columns:
-                    df_mongo["_id"] = df_mongo["_id"].astype(str)
-
-                # Parse Timestamp
+                # Parse timestamp if present
                 if "Timestamp" in df_mongo.columns:
                     df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
 
-                # Show debug info
-                st.markdown("### 🛠️ Raw MongoDB Sample (2 rows)")
-                st.json(df_mongo.head(2).to_dict(orient="records"))
+                # Show raw JSON for verification
+                st.markdown("### 🔧 Raw MongoDB Data")
+                st.json(data[:2])
 
-                # Display final DataFrame
-                show_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in df_mongo.columns]
-                if show_cols:
-                    st.markdown("### 📋 MongoDB Tweet Records:")
-                    st.dataframe(df_mongo[show_cols], use_container_width=True)
-                else:
-                    st.warning("⚠️ Expected columns not found in MongoDB documents.")
+                # Display table
+                st.markdown("### 📋 MongoDB Tweets")
+                st.dataframe(df_mongo, use_container_width=True)
+            else:
+                st.warning("⚠️ No documents found in MongoDB.")
 
         except Exception as e:
-            st.error(f"❌ MongoDB Fetch Error: {e}")
+            st.error(f"❌ MongoDB fetch error: {e}")
