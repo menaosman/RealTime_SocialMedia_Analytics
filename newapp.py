@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 import glob
-import time
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -15,23 +14,25 @@ from pymongo import MongoClient
 # 🔑 Global MongoDB URI
 mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
-# 🧭 Set page config
+# 🧭 Page Config
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="wide")
-
-# 📽️ Welcome Banner
 st.title("📊 Tweet Sentiment Analyzer")
 
+# 🎬 Lottie Animation
 def load_lottie_url(url):
-    r = requests.get(url)
-    if r.status_code != 200:
+    try:
+        r = requests.get(url)
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except:
         return None
-    return r.json()
 
 lottie_banner = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_puciaact.json")
 if lottie_banner:
     st_lottie(lottie_banner, height=300)
 else:
-    st.warning("⚠️ Animation failed to load. Check your internet or animation link.")
+    st.warning("⚠️ Animation failed to load.")
 
 st.markdown("""
 Welcome to the **Tweet Sentiment Analyzer**! 👋  
@@ -45,27 +46,24 @@ Upload your dataset to:
 # 🔁 Auto-refresh every 30 sec
 st_autorefresh(interval=30 * 1000, key="datarefresh")
 
-# 📥 Load latest CSV
+# 📥 Load CSV
 csv_files = sorted(glob.glob("output/results/*.csv"), key=os.path.getmtime)
 if csv_files:
     df = pd.concat((pd.read_csv(f, names=["Text", "Sentiment"]) for f in csv_files), ignore_index=True)
 else:
-    st.error("❌ No CSV files found in the `output/results/` folder.")
+    st.error("❌ No CSV files found in output/results/")
     st.stop()
 
-# ⏰ Add Timestamp
-timestamps = [datetime.fromtimestamp(os.path.getmtime(f)) for f in csv_files]
-if timestamps:
-    df["Timestamp"] = pd.to_datetime(timestamps[-1])
+# ⏰ Timestamp
+df["Timestamp"] = datetime.fromtimestamp(os.path.getmtime(csv_files[-1]))
 
-# 🎭 Emojis
+# 😊 Emojis
 def sentiment_with_emoji(sentiment):
     return {
         "positive": "😊 Positive",
         "neutral": "😐 Neutral",
         "negative": "😠 Negative"
     }.get(sentiment, sentiment)
-
 df["Sentiment (Emoji)"] = df["Sentiment"].apply(sentiment_with_emoji)
 
 # 🔍 Filter
@@ -76,7 +74,7 @@ if keyword:
 
 st.success(f"✅ Loaded {len(df)} tweets")
 
-# 🗂️ Tabs
+# 🧭 Tabs
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
     "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
@@ -87,25 +85,23 @@ with tab1:
     st.dataframe(df[["Text", "Sentiment (Emoji)", "Timestamp"]], use_container_width=True)
 
 with tab2:
-    st.subheader("📊 Sentiment Distribution (Pie Chart)")
-    sentiment_counts = df["Sentiment"].value_counts()
+    st.subheader("📊 Sentiment Distribution")
     fig1, ax1 = plt.subplots()
-    ax1.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', startangle=90)
-    ax1.axis("equal")
+    df["Sentiment"].value_counts().plot.pie(autopct='%1.1f%%', ax=ax1)
+    ax1.set_ylabel('')
     st.pyplot(fig1)
 
     st.subheader("📈 Sentiment Over Time")
-    if "Timestamp" in df.columns:
-        trend_df = df.groupby(["Timestamp", "Sentiment"]).size().unstack(fill_value=0)
-        st.line_chart(trend_df)
+    trend_df = df.groupby(["Timestamp", "Sentiment"]).size().unstack(fill_value=0)
+    st.line_chart(trend_df)
 
     st.subheader("📊 Sentiment Bar Chart")
-    fig_bar, ax_bar = plt.subplots()
-    sns.countplot(data=df, x="Sentiment", palette="Dark2", ax=ax_bar)
-    st.pyplot(fig_bar)
+    fig2, ax2 = plt.subplots()
+    sns.countplot(data=df, x="Sentiment", palette="Dark2", ax=ax2)
+    st.pyplot(fig2)
 
 with tab3:
-    st.subheader("☁️ Wordclouds by Sentiment")
+    st.subheader("☁️ WordClouds")
     for sentiment in ["positive", "neutral", "negative"]:
         st.markdown(f"### {sentiment.capitalize()} Tweets")
         text = " ".join(df[df["Sentiment"] == sentiment]["Text"])
@@ -117,19 +113,18 @@ with tab3:
 
 with tab4:
     st.subheader("📥 Download Results")
-    st.download_button("📥 Download CSV", data=df.to_csv(index=False), file_name="sentiment_results.csv", mime="text/csv")
+    st.download_button("Download CSV", df.to_csv(index=False), "sentiment_results.csv", "text/csv")
 
 with tab5:
     st.subheader("📦 Push to MongoDB Atlas")
     if st.button("📤 Upload to MongoDB"):
         try:
             client = MongoClient(mongo_uri)
-            db = client["sentiment_analysis"]
-            collection = db["tweets"]
+            collection = client["sentiment_analysis"]["tweets"]
             upload_df = df[["Text", "Sentiment", "Timestamp"]].dropna().to_dict("records")
             if upload_df:
                 collection.insert_many(upload_df)
-                st.success(f"✅ Uploaded {len(upload_df)} tweets to MongoDB.")
+                st.success(f"✅ Uploaded {len(upload_df)} tweets.")
             else:
                 st.warning("⚠️ No data to upload.")
         except Exception as e:
@@ -141,27 +136,18 @@ with tab6:
         try:
             client = MongoClient(mongo_uri)
             collection = client["sentiment_analysis"]["tweets"]
-            mongo_docs = list(collection.find())
-            st.write(f"📦 Retrieved {len(mongo_docs)} records")
-            
-            if mongo_docs:
-                # Convert to DataFrame
-                mongo_df = pd.DataFrame(mongo_docs)
-                
-                # Debug display
-                st.write("📄 Raw Data Preview:")
-                st.json(mongo_docs[:2])  # show first 2 raw records
+            docs = list(collection.find())
 
-                # Format and display
-                if "_id" in mongo_df.columns:
-                    mongo_df["_id"] = mongo_df["_id"].astype(str)
+            if docs:
+                mongo_df = pd.DataFrame(docs)
                 if "Timestamp" in mongo_df.columns:
-                    mongo_df["Timestamp"] = pd.to_datetime(mongo_df["Timestamp"], errors="coerce")
-
+                    mongo_df["Timestamp"] = pd.to_datetime(mongo_df["Timestamp"], errors='coerce')
+                if "_id" in mongo_df.columns:
+                    mongo_df.drop(columns="_id", inplace=True)
                 display_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in mongo_df.columns]
+                st.success(f"✅ Retrieved {len(mongo_df)} records.")
                 st.dataframe(mongo_df[display_cols], use_container_width=True)
             else:
                 st.warning("⚠️ No data found in MongoDB.")
         except Exception as e:
             st.error(f"❌ Error fetching from MongoDB: {e}")
-
