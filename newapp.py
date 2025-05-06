@@ -141,15 +141,27 @@ with tab6:
         try:
             client = MongoClient(mongo_uri)
             collection = client["sentiment_analysis"]["tweets"]
-            mongo_df = pd.DataFrame(collection.find())
-            if not mongo_df.empty:
-                mongo_df["_id"] = mongo_df["_id"].astype(str)
+            mongo_docs = list(collection.find())
+            st.write(f"📦 Retrieved {len(mongo_docs)} records")
+            
+            if mongo_docs:
+                # Convert to DataFrame
+                mongo_df = pd.DataFrame(mongo_docs)
+                
+                # Debug display
+                st.write("📄 Raw Data Preview:")
+                st.json(mongo_docs[:2])  # show first 2 raw records
+
+                # Format and display
+                if "_id" in mongo_df.columns:
+                    mongo_df["_id"] = mongo_df["_id"].astype(str)
                 if "Timestamp" in mongo_df.columns:
-                    mongo_df["Timestamp"] = pd.to_datetime(mongo_df["Timestamp"])
+                    mongo_df["Timestamp"] = pd.to_datetime(mongo_df["Timestamp"], errors="coerce")
+
                 display_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in mongo_df.columns]
-                st.success(f"✅ Retrieved {len(mongo_df)} tweets from MongoDB:")
                 st.dataframe(mongo_df[display_cols], use_container_width=True)
             else:
                 st.warning("⚠️ No data found in MongoDB.")
         except Exception as e:
             st.error(f"❌ Error fetching from MongoDB: {e}")
+
