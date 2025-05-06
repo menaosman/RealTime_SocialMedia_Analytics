@@ -7,3 +7,4 @@ pymongo
 requests
 streamlit-lottie
 streamlit-autorefresh
+numpy
