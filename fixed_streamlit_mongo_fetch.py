@@ -1,3 +1,7 @@
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
+    "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
+])
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
 
