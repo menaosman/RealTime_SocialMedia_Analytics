@@ -136,18 +136,31 @@ with tab6:
         try:
             client = MongoClient(mongo_uri)
             collection = client["sentiment_analysis"]["tweets"]
-            docs = list(collection.find())
+            documents = list(collection.find())
 
-            if docs:
-                mongo_df = pd.DataFrame(docs)
-                if "Timestamp" in mongo_df.columns:
-                    mongo_df["Timestamp"] = pd.to_datetime(mongo_df["Timestamp"], errors='coerce')
-                if "_id" in mongo_df.columns:
-                    mongo_df.drop(columns="_id", inplace=True)
-                display_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in mongo_df.columns]
-                st.success(f"✅ Retrieved {len(mongo_df)} records.")
-                st.dataframe(mongo_df[display_cols], use_container_width=True)
+            st.write(f"🔍 Fetched {len(documents)} records from MongoDB")
+
+            if documents:
+                # Show raw for debug
+                st.markdown("### 🔧 Raw MongoDB Documents:")
+                st.json(documents[:2])
+
+                # Convert to DataFrame
+                df_mongo = pd.DataFrame(documents)
+
+                # Fix: handle both _id and id formats
+                id_col = "_id" if "_id" in df_mongo.columns else "id"
+                if id_col in df_mongo.columns:
+                    df_mongo[id_col] = df_mongo[id_col].astype(str)
+
+                if "Timestamp" in df_mongo.columns:
+                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
+
+                # Display only relevant columns
+                display_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in df_mongo.columns]
+                st.markdown("### 📋 MongoDB Tweet Records:")
+                st.dataframe(df_mongo[display_cols], use_container_width=True)
             else:
-                st.warning("⚠️ No data found in MongoDB.")
+                st.warning("⚠️ No documents found.")
         except Exception as e:
-            st.error(f"❌ Error fetching from MongoDB: {e}")
+            st.error(f"❌ MongoDB Fetch Error: {e}")
