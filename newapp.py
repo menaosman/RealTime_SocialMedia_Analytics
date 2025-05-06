@@ -130,34 +130,31 @@ with tab5:
             st.error(f"❌ Upload failed: {e}")
 
 with tab6:
-    st.subheader("📥 Fetch Tweets from Flask API")
+    st.subheader("📥 Fetch Tweets from MongoDB Atlas")
 
-    API_URL = "http://127.0.0.1:5000/fetch"  # Or replace with your deployed URL if applicable
-
-    if st.button("Fetch from MongoDB via Flask API"):
+    if st.button("Fetch from MongoDB"):
         try:
-            response = requests.get(API_URL)
-            if response.status_code == 200:
-                documents = response.json()
+            # ✅ Fixed TLS + Timeout + Insecure Dev Certificate
+            client = MongoClient(
+                mongo_uri,
+                tls=True,
+                tlsAllowInvalidCertificates=True,
+                serverSelectionTimeoutMS=30000
+            )
+            collection = client["sentiment_analysis"]["tweets"]
+            cursor = collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1})
 
-                if not documents:
-                    st.warning("⚠️ No documents found in MongoDB.")
-                else:
-                    st.success(f"✅ Retrieved {len(documents)} tweets from MongoDB.")
+            data = list(cursor)
 
-                    # Show sample
-                    st.markdown("### 🧾 Sample Raw Records")
-                    st.json(documents[:2])
-
-                    # Convert to DataFrame
-                    df_mongo = pd.DataFrame(documents)
-                    if "Timestamp" in df_mongo.columns:
-                        df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
-
-                    st.markdown("### 📋 MongoDB Tweet Records")
-                    st.dataframe(df_mongo, use_container_width=True)
-
+            if data:
+                st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
+                df_mongo = pd.DataFrame(data)
+                if "Timestamp" in df_mongo.columns:
+                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
+                st.dataframe(df_mongo, use_container_width=True)
+                st.json(data[:2])  # show sample
             else:
-                st.error(f"❌ API Error: {response.status_code} - {response.text}")
+                st.warning("⚠️ No documents found in MongoDB.")
+
         except Exception as e:
-            st.error(f"❌ Fetch failed: {e}")
+            st.error(f"❌ MongoDB fetch error: {e}")
