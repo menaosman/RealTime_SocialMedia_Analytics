@@ -124,7 +124,8 @@ with tab5:
 
     if st.button("📤 Upload to MongoDB"):
         try:
-            mongo_uri = mongo_uri = mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+            mongo_uri = mongo_uri = mongo_uri = # 🔑 MongoDB URI (define once globally)
+mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
             client = MongoClient(mongo_uri)
             db = client["sentiment_analysis"]
