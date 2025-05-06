@@ -1,3 +1,19 @@
+# Streamlit MongoDB Tweet App with Fix for Fetch
+
+import streamlit as st
+import pandas as pd
+import os
+import glob
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import seaborn as sns
+from streamlit_autorefresh import st_autorefresh
+from datetime import datetime
+import requests
+from streamlit_lottie import st_lottie
+from pymongo import MongoClient
+
+mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
     "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
