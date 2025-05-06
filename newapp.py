@@ -10,7 +10,10 @@ from streamlit_autorefresh import st_autorefresh
 from datetime import datetime
 import requests
 from streamlit_lottie import st_lottie
-from pymongo import MongoClient  # ✅ For MongoDB
+from pymongo import MongoClient
+
+# 🔑 Global MongoDB URI
+mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # 🧭 Set page config (must be FIRST)
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="wide")
@@ -50,13 +53,12 @@ else:
     st.error("❌ No CSV files found in the `output/results/` folder.")
     st.stop()
 
-
-# ⏰ Add Timestamp based on last file modified time
+# ⏰ Add Timestamp
 timestamps = [datetime.fromtimestamp(os.path.getmtime(f)) for f in csv_files]
 if timestamps:
     df["Timestamp"] = pd.to_datetime(timestamps[-1])
 
-# 🎭 Add emojis to sentiment
+# 🎭 Emojis
 def sentiment_with_emoji(sentiment):
     return {
         "positive": "😊 Positive",
@@ -66,7 +68,7 @@ def sentiment_with_emoji(sentiment):
 
 df["Sentiment (Emoji)"] = df["Sentiment"].apply(sentiment_with_emoji)
 
-# 📋 Filter section
+# 🔍 Filter
 st.subheader("🔎 Filter by Keyword")
 keyword = st.text_input("Enter a keyword to search tweets:")
 if keyword:
@@ -74,13 +76,11 @@ if keyword:
 
 st.success(f"✅ Loaded {len(df)} tweets")
 
-# 🗂️ Tabs for layout
+# 🗂️ Tabs
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
     "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
 ])
-
-
 
 with tab1:
     st.subheader("📋 Tweets Table")
@@ -121,34 +121,20 @@ with tab4:
 
 with tab5:
     st.subheader("📦 Push to MongoDB Atlas")
-
     if st.button("📤 Upload to MongoDB"):
         try:
-            mongo_uri = mongo_uri = mongo_uri = # 🔑 MongoDB URI (define once globally)
-mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-
             client = MongoClient(mongo_uri)
             db = client["sentiment_analysis"]
             collection = db["tweets"]
-
             upload_df = df[["Text", "Sentiment", "Timestamp"]].dropna().to_dict("records")
-
-            print("✅ DEBUG: Preview of data to upload (first 3 rows):")
-            print(upload_df[:3])  # show preview in terminal
-
             if upload_df:
-                result = collection.insert_many(upload_df)
-                print("✅ Upload success. Inserted IDs:")
-                print(result.inserted_ids[:3])  # optional print
+                collection.insert_many(upload_df)
                 st.success(f"✅ Uploaded {len(upload_df)} tweets to MongoDB.")
             else:
-                print("⚠️ No data to upload.")
-                st.warning("No data to upload.")
+                st.warning("⚠️ No data to upload.")
         except Exception as e:
-            print(f"❌ Upload error: {e}")
             st.error(f"❌ Upload failed: {e}")
-    else:
-        st.info("Click the button to upload data to MongoDB.")
+
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
     if st.button("Fetch from MongoDB"):
@@ -163,4 +149,3 @@ with tab6:
                 st.warning("⚠️ No data found in MongoDB.")
         except Exception as e:
             st.error(f"❌ Error fetching from MongoDB: {e}")
-
