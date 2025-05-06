@@ -130,32 +130,34 @@ with tab5:
             st.error(f"❌ Upload failed: {e}")
 
 with tab6:
-    st.subheader("📥 Fetch Tweets from MongoDB Atlas")
+    st.subheader("📥 Fetch Tweets from Flask API")
 
-    if st.button("Fetch from MongoDB"):
+    API_URL = "http://127.0.0.1:5000/fetch"  # Or replace with your deployed URL if applicable
+
+    if st.button("Fetch from MongoDB via Flask API"):
         try:
-            client = MongoClient(mongo_uri)
-            collection = client["sentiment_analysis"]["tweets"]
-            documents = list(collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1}))
+            response = requests.get(API_URL)
+            if response.status_code == 200:
+                documents = response.json()
 
-            if not documents:
-                st.warning("⚠️ No documents found in MongoDB.")
+                if not documents:
+                    st.warning("⚠️ No documents found in MongoDB.")
+                else:
+                    st.success(f"✅ Retrieved {len(documents)} tweets from MongoDB.")
+
+                    # Show sample
+                    st.markdown("### 🧾 Sample Raw Records")
+                    st.json(documents[:2])
+
+                    # Convert to DataFrame
+                    df_mongo = pd.DataFrame(documents)
+                    if "Timestamp" in df_mongo.columns:
+                        df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
+
+                    st.markdown("### 📋 MongoDB Tweet Records")
+                    st.dataframe(df_mongo, use_container_width=True)
+
             else:
-                st.success(f"✅ Retrieved {len(documents)} tweets from MongoDB.")
-
-                # Show raw preview
-                st.markdown("### 🧾 Sample Raw Records")
-                st.json(documents[:2])
-
-                # Create DataFrame
-                df_mongo = pd.DataFrame(documents)
-
-                # Convert Timestamp
-                if "Timestamp" in df_mongo.columns:
-                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
-
-                st.markdown("### 📋 MongoDB Tweet Records")
-                st.dataframe(df_mongo, use_container_width=True)
-
+                st.error(f"❌ API Error: {response.status_code} - {response.text}")
         except Exception as e:
-            st.error(f"❌ MongoDB Fetch Error: {e}")
+            st.error(f"❌ Fetch failed: {e}")
