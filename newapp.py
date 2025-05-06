@@ -11,7 +11,7 @@ import requests
 from streamlit_lottie import st_lottie
 from pymongo import MongoClient
 
-# 🔑 Global MongoDB URI
+# 🔑 MongoDB URI
 mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # 🧭 Page Config
@@ -50,12 +50,10 @@ st_autorefresh(interval=30 * 1000, key="datarefresh")
 csv_files = sorted(glob.glob("output/results/*.csv"), key=os.path.getmtime)
 if csv_files:
     df = pd.concat((pd.read_csv(f, names=["Text", "Sentiment"]) for f in csv_files), ignore_index=True)
+    df["Timestamp"] = datetime.fromtimestamp(os.path.getmtime(csv_files[-1]))
 else:
     st.error("❌ No CSV files found in output/results/")
     st.stop()
-
-# ⏰ Timestamp
-df["Timestamp"] = datetime.fromtimestamp(os.path.getmtime(csv_files[-1]))
 
 # 😊 Emojis
 def sentiment_with_emoji(sentiment):
@@ -64,6 +62,7 @@ def sentiment_with_emoji(sentiment):
         "neutral": "😐 Neutral",
         "negative": "😠 Negative"
     }.get(sentiment, sentiment)
+
 df["Sentiment (Emoji)"] = df["Sentiment"].apply(sentiment_with_emoji)
 
 # 🔍 Filter
@@ -141,26 +140,14 @@ with tab6:
             st.write(f"🔍 Fetched {len(documents)} records from MongoDB")
 
             if documents:
-                # Show raw for debug
-                st.markdown("### 🔧 Raw MongoDB Documents:")
-                st.json(documents[:2])
-
-                # Convert to DataFrame
                 df_mongo = pd.DataFrame(documents)
-
-                # Fix: handle both _id and id formats
-                id_col = "_id" if "_id" in df_mongo.columns else "id"
-                if id_col in df_mongo.columns:
-                    df_mongo[id_col] = df_mongo[id_col].astype(str)
-
+                if "_id" in df_mongo.columns:
+                    df_mongo["_id"] = df_mongo["_id"].astype(str)
                 if "Timestamp" in df_mongo.columns:
                     df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
 
-                # Display only relevant columns
-                display_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in df_mongo.columns]
-                st.markdown("### 📋 MongoDB Tweet Records:")
-                st.dataframe(df_mongo[display_cols], use_container_width=True)
+                st.dataframe(df_mongo[["Text", "Sentiment", "Timestamp"]], use_container_width=True)
             else:
-                st.warning("⚠️ No documents found.")
+                st.warning("⚠️ No documents found in MongoDB.")
         except Exception as e:
             st.error(f"❌ MongoDB Fetch Error: {e}")
