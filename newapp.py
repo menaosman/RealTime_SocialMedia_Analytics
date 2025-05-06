@@ -44,7 +44,12 @@ st_autorefresh(interval=30 * 1000, key="datarefresh")
 
 # 📥 Load latest CSV
 csv_files = sorted(glob.glob("output/results/*.csv"), key=os.path.getmtime)
-df = pd.concat((pd.read_csv(f, names=["Text", "Sentiment"]) for f in csv_files), ignore_index=True)
+if csv_files:
+    df = pd.concat((pd.read_csv(f, names=["Text", "Sentiment"]) for f in csv_files), ignore_index=True)
+else:
+    st.error("❌ No CSV files found in the `output/results/` folder.")
+    st.stop()
+
 
 # ⏰ Add Timestamp based on last file modified time
 timestamps = [datetime.fromtimestamp(os.path.getmtime(f)) for f in csv_files]
