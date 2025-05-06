@@ -1,24 +1,17 @@
 import streamlit as st
 import pandas as pd
-import os
-import glob
-import time
-from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-import seaborn as sns
-from streamlit_autorefresh import st_autorefresh
-from datetime import datetime
-import requests
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from wordcloud import WordCloud
 from streamlit_lottie import st_lottie
+import requests
 from pymongo import MongoClient
 
-# 🔑 Global MongoDB URI
+# MongoDB URI (encoded)
 mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
-# 🧭 Set page config (must be FIRST)
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="wide")
 
-# 📽️ Welcome Banner
 st.title("📊 Tweet Sentiment Analyzer")
 
 def load_lottie_url(url):
@@ -34,118 +27,114 @@ else:
     st.warning("⚠️ Animation failed to load. Check your internet or animation link.")
 
 st.markdown("""
-Welcome to the **Tweet Sentiment Analyzer**! 👋  
+Welcome to the **Tweet Sentiment Analyzer**! 👋
+
 Upload your dataset to:
-- ✅ Detect sentiment (positive, neutral, negative)  
-- ☁️ Generate WordClouds  
-- 📈 Track sentiment trends over time  
+- ✅ Detect sentiment (positive, neutral, negative)
+- 🌥 Generate WordClouds
+- 📈 Track sentiment trends over time
 - 🔍 Filter tweets by keywords
 """)
 
-# 🔁 Auto-refresh every 30 sec
-st_autorefresh(interval=30 * 1000, key="datarefresh")
+uploaded_file = st.file_uploader("📂 Upload a CSV file with a 'Text' column", type=["csv"])
 
-# 📥 Load latest CSV
-csv_files = sorted(glob.glob("output/results/*.csv"), key=os.path.getmtime)
-if csv_files:
-    df = pd.concat((pd.read_csv(f, names=["Text", "Sentiment"]) for f in csv_files), ignore_index=True)
-else:
-    st.error("❌ No CSV files found in the `output/results/` folder.")
-    st.stop()
+if "start_clicked" not in st.session_state:
+    st.session_state.start_clicked = False
 
-# ⏰ Add Timestamp
-timestamps = [datetime.fromtimestamp(os.path.getmtime(f)) for f in csv_files]
-if timestamps:
-    df["Timestamp"] = pd.to_datetime(timestamps[-1])
+if st.button("🚀 Start Sentiment Analysis"):
+    st.session_state.start_clicked = True
 
-# 🎭 Emojis
-def sentiment_with_emoji(sentiment):
-    return {
-        "positive": "😊 Positive",
-        "neutral": "😐 Neutral",
-        "negative": "😠 Negative"
-    }.get(sentiment, sentiment)
+if uploaded_file and st.session_state.start_clicked:
+    df = pd.read_csv(uploaded_file)
+    df.columns = df.columns.str.strip().str.lower()
 
-df["Sentiment (Emoji)"] = df["Sentiment"].apply(sentiment_with_emoji)
+    if 'text' not in df.columns:
+        st.error("❌ The uploaded file must contain a 'Text' column.")
+    else:
+        analyzer = SentimentIntensityAnalyzer()
 
-# 🔍 Filter
-st.subheader("🔎 Filter by Keyword")
-keyword = st.text_input("Enter a keyword to search tweets:")
-if keyword:
-    df = df[df["Text"].str.contains(keyword, case=False)]
+        def get_sentiment(text):
+            score = analyzer.polarity_scores(str(text))['compound']
+            if score >= 0.05:
+                return 'positive'
+            elif score <= -0.05:
+                return 'negative'
+            else:
+                return 'neutral'
 
-st.success(f"✅ Loaded {len(df)} tweets")
+        df['Sentiment'] = df['text'].astype(str).apply(get_sentiment)
 
-# 🗂️ Tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
-    "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
-])
+        st.success("✅ Sentiment analysis completed!")
+        st.dataframe(df[['text', 'Sentiment']])
 
-with tab1:
-    st.subheader("📋 Tweets Table")
-    st.dataframe(df[["Text", "Sentiment (Emoji)", "Timestamp"]], use_container_width=True)
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button("⬇️ Download Results as CSV", csv, "sentiment_results.csv", "text/csv")
 
-with tab2:
-    st.subheader("📊 Sentiment Distribution (Pie Chart)")
-    sentiment_counts = df["Sentiment"].value_counts()
-    fig1, ax1 = plt.subplots()
-    ax1.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', startangle=90)
-    ax1.axis("equal")
-    st.pyplot(fig1)
+        st.subheader("📈 Sentiment Distribution (Bar Chart)")
+        st.bar_chart(df['Sentiment'].value_counts())
 
-    st.subheader("📈 Sentiment Over Time")
-    if "Timestamp" in df.columns:
-        trend_df = df.groupby(["Timestamp", "Sentiment"]).size().unstack(fill_value=0)
-        st.line_chart(trend_df)
+        sentiment_filter = st.selectbox("🔍 Filter by Sentiment", ['all', 'positive', 'neutral', 'negative'])
+        if sentiment_filter != 'all':
+            filtered_df = df[df['Sentiment'] == sentiment_filter]
+            st.write(f"Showing {len(filtered_df)} {sentiment_filter} tweets:")
+            st.dataframe(filtered_df[['text', 'Sentiment']])
 
-    st.subheader("📊 Sentiment Bar Chart")
-    fig_bar, ax_bar = plt.subplots()
-    sns.countplot(data=df, x="Sentiment", palette="Dark2", ax=ax_bar)
-    st.pyplot(fig_bar)
+        st.subheader("🌥 WordClouds by Sentiment")
+        for sentiment in ['positive', 'neutral', 'negative']:
+            subset = df[df['Sentiment'] == sentiment]
+            text = " ".join(subset['text'].astype(str))
+            if text:
+                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+                st.markdown(f"#### {sentiment.capitalize()} Tweets")
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis('off')
+                st.pyplot(fig)
+            else:
+                st.warning(f"No {sentiment} tweets available for WordCloud.")
 
-with tab3:
-    st.subheader("☁️ Wordclouds by Sentiment")
-    for sentiment in ["positive", "neutral", "negative"]:
-        st.markdown(f"### {sentiment.capitalize()} Tweets")
-        text = " ".join(df[df["Sentiment"] == sentiment]["Text"])
-        if text.strip():
-            wc = WordCloud(width=800, height=400, background_color="white").generate(text)
-            st.image(wc.to_array())
+        st.subheader("🔎 Filter by Keyword")
+        keyword = st.text_input("Enter a keyword to search for tweets:")
+        if keyword:
+            keyword_df = df[df['text'].str.contains(keyword, case=False, na=False)]
+            st.write(f"Found {len(keyword_df)} tweets containing '{keyword}':")
+            st.dataframe(keyword_df[['text', 'Sentiment']])
+            st.bar_chart(keyword_df['Sentiment'].value_counts())
+
+        st.subheader("🧮 Sentiment Summary")
+        counts = df['Sentiment'].value_counts()
+        st.write(counts)
+
+        st.subheader("📊 Sentiment Breakdown (Pie Chart)")
+        fig1, ax1 = plt.subplots()
+        ax1.pie(counts, labels=counts.index, autopct='%1.1f%%', startangle=90)
+        ax1.axis('equal')
+        st.pyplot(fig1)
+
+        if 'timestamp' in df.columns:
+            st.subheader("🕒 Sentiment Over Time")
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            timeline = df.groupby([pd.Grouper(key='timestamp', freq='D'), 'Sentiment']).size().unstack().fillna(0)
+            st.line_chart(timeline)
+
+# 🧲 Fetch from MongoDB
+st.subheader("📥 Fetch Tweets from MongoDB Atlas")
+if st.button("Fetch from MongoDB"):
+    try:
+        client = MongoClient(mongo_uri)
+        collection = client["sentiment_analysis"]["tweets"]
+        mongo_df = pd.DataFrame(collection.find())
+
+        if not mongo_df.empty:
+            mongo_df["_id"] = mongo_df["_id"].astype(str)
+            if "Timestamp" in mongo_df.columns:
+                mongo_df["Timestamp"] = pd.to_datetime(mongo_df["Timestamp"])
+
+            display_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in mongo_df.columns]
+            st.success(f"✅ Retrieved {len(mongo_df)} tweets from MongoDB:")
+            st.dataframe(mongo_df[display_cols], use_container_width=True)
+            st.bar_chart(mongo_df["Sentiment"].value_counts())
         else:
-            st.info("No data for this sentiment.")
-
-with tab4:
-    st.subheader("📥 Download Results")
-    st.download_button("📥 Download CSV", data=df.to_csv(index=False), file_name="sentiment_results.csv", mime="text/csv")
-
-with tab5:
-    st.subheader("📦 Push to MongoDB Atlas")
-    if st.button("📤 Upload to MongoDB"):
-        try:
-            client = MongoClient(mongo_uri)
-            db = client["sentiment_analysis"]
-            collection = db["tweets"]
-            upload_df = df[["Text", "Sentiment", "Timestamp"]].dropna().to_dict("records")
-            if upload_df:
-                collection.insert_many(upload_df)
-                st.success(f"✅ Uploaded {len(upload_df)} tweets to MongoDB.")
-            else:
-                st.warning("⚠️ No data to upload.")
-        except Exception as e:
-            st.error(f"❌ Upload failed: {e}")
-
-with tab6:
-    st.subheader("📥 Fetch Tweets from MongoDB Atlas")
-    if st.button("Fetch from MongoDB"):
-        try:
-            client = MongoClient(mongo_uri)
-            collection = client["sentiment_analysis"]["tweets"]
-            mongo_df = pd.DataFrame(collection.find())
-            if not mongo_df.empty:
-                st.success("✅ Retrieved data from MongoDB:")
-                st.dataframe(mongo_df[["Text", "Sentiment", "Timestamp"]])
-            else:
-                st.warning("⚠️ No data found in MongoDB.")
-        except Exception as e:
-            st.error(f"❌ Error fetching from MongoDB: {e}")
+            st.warning("⚠️ No data found in MongoDB.")
+    except Exception as e:
+        st.error(f"❌ Error fetching from MongoDB: {e}")
