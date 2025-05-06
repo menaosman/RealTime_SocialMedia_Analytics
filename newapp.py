@@ -75,7 +75,12 @@ if keyword:
 st.success(f"✅ Loaded {len(df)} tweets")
 
 # 🗂️ Tabs for layout
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds", "📤 Download", "📦 MongoDB Upload"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
+    "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
+])
+
+
 
 with tab1:
     st.subheader("📋 Tweets Table")
@@ -143,3 +148,18 @@ with tab5:
             st.error(f"❌ Upload failed: {e}")
     else:
         st.info("Click the button to upload data to MongoDB.")
+with tab6:
+    st.subheader("📥 Fetch Tweets from MongoDB Atlas")
+    if st.button("Fetch from MongoDB"):
+        try:
+            client = MongoClient(mongo_uri)
+            collection = client["sentiment_analysis"]["tweets"]
+            mongo_df = pd.DataFrame(collection.find())
+            if not mongo_df.empty:
+                st.success("✅ Retrieved data from MongoDB:")
+                st.dataframe(mongo_df[["Text", "Sentiment", "Timestamp"]])
+            else:
+                st.warning("⚠️ No data found in MongoDB.")
+        except Exception as e:
+            st.error(f"❌ Error fetching from MongoDB: {e}")
+
