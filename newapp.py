@@ -134,20 +134,37 @@ with tab6:
     if st.button("Fetch from MongoDB"):
         try:
             client = MongoClient(mongo_uri)
-            collection = client["sentiment_analysis"]["tweets"]
+            db = client["sentiment_analysis"]
+            collection = db["tweets"]
             documents = list(collection.find())
 
-            st.write(f"🔍 Fetched {len(documents)} records from MongoDB")
+            st.write(f"🔍 Fetched {len(documents)} records from MongoDB.")
 
-            if documents:
+            if not documents:
+                st.warning("⚠️ No documents found in MongoDB.")
+            else:
+                # Convert to DataFrame
                 df_mongo = pd.DataFrame(documents)
+
+                # Ensure _id is string
                 if "_id" in df_mongo.columns:
                     df_mongo["_id"] = df_mongo["_id"].astype(str)
+
+                # Parse Timestamp
                 if "Timestamp" in df_mongo.columns:
                     df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
 
-                st.dataframe(df_mongo[["Text", "Sentiment", "Timestamp"]], use_container_width=True)
-            else:
-                st.warning("⚠️ No documents found in MongoDB.")
+                # Show debug info
+                st.markdown("### 🛠️ Raw MongoDB Sample (2 rows)")
+                st.json(df_mongo.head(2).to_dict(orient="records"))
+
+                # Display final DataFrame
+                show_cols = [col for col in ["Text", "Sentiment", "Timestamp"] if col in df_mongo.columns]
+                if show_cols:
+                    st.markdown("### 📋 MongoDB Tweet Records:")
+                    st.dataframe(df_mongo[show_cols], use_container_width=True)
+                else:
+                    st.warning("⚠️ Expected columns not found in MongoDB documents.")
+
         except Exception as e:
             st.error(f"❌ MongoDB Fetch Error: {e}")
