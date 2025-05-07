@@ -159,7 +159,8 @@ with tab6:
                 if "Timestamp" in df_mongo.columns:
                     df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
                 st.dataframe(df_mongo, use_container_width=True)
-                st.json(data[:2])
+                st.json(df_mongo.head(2).to_dict(orient="records"))
+
             else:
                 st.warning("⚠️ No documents found in MongoDB.")
  
