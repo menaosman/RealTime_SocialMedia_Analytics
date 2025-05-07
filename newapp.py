@@ -121,26 +121,25 @@ with tab4:
     st.download_button("Download CSV", df.to_csv(index=False), "sentiment_results.csv", "text/csv")
 
 with tab5:
-    st.subheader("📦 Sync CSV to MongoDB Atlas (Replace Existing Data)")
-    if st.button("🔁 Sync & Upload to MongoDB"):
+    st.subheader("📦 Push to MongoDB Atlas")
+    if st.button("📤 Upload to MongoDB"):
         try:
             client = MongoClient(mongo_uri)
             collection = client["sentiment_analysis"]["tweets"]
 
-            # Clear old records first
-            delete_result = collection.delete_many({})
-            st.info(f"🗑 Cleared {delete_result.deleted_count} old records from MongoDB.")
+            # Add batch timestamp
+            now = datetime.now().strftime("%Y-%m-%d %H:%M")
+            upload_df = df[["Text", "Sentiment", "Timestamp"]].dropna().copy()
+            upload_df["BatchTimestamp"] = now
 
-            # Prepare new data
-            upload_df = df[["Text", "Sentiment", "Timestamp"]].dropna().to_dict("records")
-            if upload_df:
-                collection.insert_many(upload_df)
-                st.success(f"✅ Uploaded {len(upload_df)} fresh tweets to MongoDB.")
+            records = upload_df.to_dict("records")
+            if records:
+                collection.insert_many(records)
+                st.success(f"✅ Uploaded {len(records)} tweets with BatchTimestamp = {now}")
             else:
                 st.warning("⚠️ No data to upload.")
         except Exception as e:
             st.error(f"❌ Upload failed: {e}")
-
 
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
