@@ -20,10 +20,9 @@ def fetch_tweets():
         for tweet in tweets:
             ts = tweet.get("Timestamp")
             if isinstance(ts, datetime):
-                tweet["Timestamp"] = ts.isoformat()
+                tweet["Timestamp"] = ts.strftime("%Y-%m-%d %H:%M:%S")
             else:
-                # Fix: fallback timestamp if missing
-                tweet["Timestamp"] = datetime.utcnow().isoformat()
+                tweet["Timestamp"] = "N/A"
 
         return jsonify(tweets)
     except Exception as e:
