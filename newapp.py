@@ -153,10 +153,16 @@ with tab6:
                 st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
                 df_mongo = pd.DataFrame(data)
 
+                # ⏱️ Clean timestamps
                 if "Timestamp" in df_mongo.columns:
-                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
+                    df_mongo["Timestamp"] = pd.to_datetime(
+                        df_mongo["Timestamp"], errors="coerce"
+                    ).dt.strftime("%Y-%m-%d %H:%M")
 
+                # 😄 Add emojis
                 df_mongo["Sentiment (Emoji)"] = df_mongo["Sentiment"].apply(sentiment_with_emoji)
+
+                # 🧾 Display table only — no JSON preview
                 st.dataframe(df_mongo[["Text", "Sentiment (Emoji)", "Timestamp"]], use_container_width=True)
 
             else:
