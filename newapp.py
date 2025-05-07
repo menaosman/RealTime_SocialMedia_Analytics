@@ -11,14 +11,14 @@ import requests
 from streamlit_lottie import st_lottie
 from pymongo import MongoClient
 
-# MongoDB URI
+# 🔑 MongoDB URI
 mongo_uri = "mongodb+srv://biomedicalinformatics100:MyNewSecurePass%2123@cluster0.jilvfuv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
+# ⚙️ Page setup
 st.set_page_config(page_title="Tweet Sentiment Analyzer", layout="wide")
-
-# 1️⃣ Title and Lottie (cached)
 st.title("📊 Tweet Sentiment Analyzer")
 
+# 🎬 Load Lottie animation (with caching)
 @st.cache_data(show_spinner=False)
 def load_lottie_url(url):
     try:
@@ -29,13 +29,13 @@ def load_lottie_url(url):
     except:
         return None
 
-lottie_banner = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_puciaact.json")
-if lottie_banner:
-    st_lottie(lottie_banner, height=300)
+lottie = load_lottie_url("https://assets2.lottiefiles.com/packages/lf20_puciaact.json")
+if lottie:
+    st_lottie(lottie, height=300)
 else:
-    st.warning("⚠️ Animation failed to load.")
+    st.warning("⚠️ Lottie animation failed to load.")
 
-# 📄 Intro
+# 🧾 Welcome message
 st.markdown("""
 Welcome to the **Tweet Sentiment Analyzer**! 👋  
 Upload your dataset to:
@@ -45,18 +45,15 @@ Upload your dataset to:
 - 🔍 Filter tweets by keywords
 """)
 
-# 2️⃣ Auto-refresh disabled by default (optional)
-# st_autorefresh(interval=30 * 1000, key="datarefresh")
-
-# 3️⃣ Load CSVs — optimized to load only latest CSV
+# 📥 Load latest CSV
 @st.cache_data(show_spinner=True)
 def load_latest_csv():
     files = sorted(glob.glob("output/results/*.csv"), key=os.path.getmtime)
     if not files:
         return None, None
-    latest_file = files[-1]
-    df = pd.read_csv(latest_file, names=["Text", "Sentiment"])
-    df["Timestamp"] = datetime.fromtimestamp(os.path.getmtime(latest_file))
+    latest = files[-1]
+    df = pd.read_csv(latest, names=["Text", "Sentiment"])
+    df["Timestamp"] = datetime.fromtimestamp(os.path.getmtime(latest))
     return df, len(files)
 
 df, file_count = load_latest_csv()
@@ -64,7 +61,7 @@ if df is None:
     st.error("❌ No CSV files found in output/results/")
     st.stop()
 
-# Emojis
+# 😊 Add emoji to sentiments
 def sentiment_with_emoji(sentiment):
     return {
         "positive": "😊 Positive",
@@ -74,7 +71,7 @@ def sentiment_with_emoji(sentiment):
 
 df["Sentiment (Emoji)"] = df["Sentiment"].apply(sentiment_with_emoji)
 
-# Keyword Filter
+# 🔍 Keyword filter
 st.subheader("🔎 Filter by Keyword")
 keyword = st.text_input("Enter a keyword to search tweets:")
 if keyword:
@@ -82,7 +79,7 @@ if keyword:
 
 st.success(f"✅ Loaded {len(df)} tweets from {file_count} file(s)")
 
-# 4️⃣ Tabs
+# 🗂️ Interface tabs
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📋 Tweets Table", "📈 Visual Analytics", "☁️ WordClouds",
     "📤 Download", "📦 MongoDB Upload", "📥 Fetch from MongoDB"
@@ -100,8 +97,8 @@ with tab2:
     st.pyplot(fig1)
 
     st.subheader("📈 Sentiment Over Time")
-    trend_df = df.groupby(["Timestamp", "Sentiment"]).size().unstack(fill_value=0)
-    st.line_chart(trend_df)
+    timeline = df.groupby(["Timestamp", "Sentiment"]).size().unstack(fill_value=0)
+    st.line_chart(timeline)
 
     st.subheader("📊 Sentiment Bar Chart")
     fig2, ax2 = plt.subplots()
@@ -140,7 +137,6 @@ with tab5:
 
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
-
     if st.button("Fetch from MongoDB"):
         try:
             client = MongoClient(
@@ -157,12 +153,12 @@ with tab6:
                 st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
                 df_mongo = pd.DataFrame(data)
                 if "Timestamp" in df_mongo.columns:
-                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
+                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
+                    df_mongo["Timestamp"] = df_mongo["Timestamp"].astype(str)
                 st.dataframe(df_mongo, use_container_width=True)
                 st.json(df_mongo.head(2).to_dict(orient="records"))
-
             else:
                 st.warning("⚠️ No documents found in MongoDB.")
- 
+
         except Exception as e:
             st.error(f"❌ MongoDB fetch error: {e}")
