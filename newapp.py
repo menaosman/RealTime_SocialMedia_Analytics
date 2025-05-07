@@ -151,15 +151,24 @@ with tab6:
 
             if data:
                 st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
+
                 df_mongo = pd.DataFrame(data)
+
                 if "Timestamp" in df_mongo.columns:
-                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
-                    df_mongo["Timestamp"] = df_mongo["Timestamp"].astype(str)
-                st.dataframe(df_mongo, use_container_width=True)
+                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").astype(str)
+
+                # Apply emoji formatting to sentiment column
+                df_mongo["Sentiment (Emoji)"] = df_mongo["Sentiment"].apply(sentiment_with_emoji)
+
+                # Display like the main table
+                st.markdown("### 📋 MongoDB Tweet Records")
+                st.dataframe(df_mongo[["Text", "Sentiment (Emoji)", "Timestamp"]], use_container_width=True)
+
+                # Optionally show raw preview
+                st.markdown("### 🛠 Raw Sample")
                 st.json(df_mongo.head(2).to_dict(orient="records"))
             else:
                 st.warning("⚠️ No documents found in MongoDB.")
 
         except Exception as e:
             st.error(f"❌ MongoDB fetch error: {e}")
-            
