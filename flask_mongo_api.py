@@ -1,7 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
-from bson.json_util import dumps
 from datetime import datetime
 
 app = Flask(__name__)
@@ -17,9 +16,15 @@ def fetch_tweets():
     try:
         cursor = collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1})
         tweets = list(cursor)
+
         for tweet in tweets:
-            if isinstance(tweet.get("Timestamp"), datetime):
-                tweet["Timestamp"] = tweet["Timestamp"].isoformat()
+            ts = tweet.get("Timestamp")
+            if isinstance(ts, datetime):
+                tweet["Timestamp"] = ts.isoformat()
+            else:
+                # Fix: fallback timestamp if missing
+                tweet["Timestamp"] = datetime.utcnow().isoformat()
+
         return jsonify(tweets)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
