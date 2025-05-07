@@ -166,7 +166,7 @@ with tab6:
 
                 # Optionally show raw preview
                 st.markdown("### 🛠 Raw Sample")
-                st.json(df_mongo.head(2).to_dict(orient="records"))
+                #st.json(df_mongo.head(2).to_dict(orient="records"))
             else:
                 st.warning("⚠️ No documents found in MongoDB.")
 
