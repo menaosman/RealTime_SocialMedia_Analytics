@@ -147,8 +147,8 @@ with tab5:
 with tab6:
     if 'mongo_data' in st.session_state:
         mongo_df = st.session_state['mongo_data'].copy()
-        if 'Timestamp' in mongo_df.columns:
-            mongo_df['Timestamp'] = pd.to_datetime(mongo_df['Timestamp'], errors='coerce')
+        if "Timestamp" in df_mongo.columns:
+             df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
 
         st.subheader("📊 MongoDB Sentiment Bar Chart")
         st.bar_chart(mongo_df['Sentiment'].value_counts())
