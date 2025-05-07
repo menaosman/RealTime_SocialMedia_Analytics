@@ -157,11 +157,11 @@ with tab6:
                 st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
                 df_mongo = pd.DataFrame(data)
                 if "Timestamp" in df_mongo.columns:
-                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce")
+                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
                 st.dataframe(df_mongo, use_container_width=True)
                 st.json(data[:2])
             else:
                 st.warning("⚠️ No documents found in MongoDB.")
-
+ 
         except Exception as e:
             st.error(f"❌ MongoDB fetch error: {e}")
