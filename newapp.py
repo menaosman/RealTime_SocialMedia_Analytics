@@ -147,35 +147,41 @@ with tab5:
 
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
-    if st.button("Fetch from MongoDB"):
-        try:
-            client = MongoClient(
-                mongo_uri,
-                tls=True,
-                tlsAllowInvalidCertificates=True,
-                serverSelectionTimeoutMS=30000
+
+    try:
+        client = MongoClient(
+            mongo_uri,
+            tls=True,
+            tlsAllowInvalidCertificates=True,
+            serverSelectionTimeoutMS=30000
+        )
+        collection = client["sentiment_analysis"]["tweets"]
+
+        # Get distinct batch timestamps
+        batch_timestamps = collection.distinct("BatchTimestamp")
+        batch_timestamps = sorted(batch_timestamps, reverse=True)
+
+        if batch_timestamps:
+            selected_batch = st.selectbox("📅 Select Batch Timestamp:", batch_timestamps)
+            
+            # Only fetch tweets from selected batch
+            cursor = collection.find(
+                {"BatchTimestamp": selected_batch},
+                {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1}
             )
-            collection = client["sentiment_analysis"]["tweets"]
-            cursor = collection.find({}, {"_id": 0, "Text": 1, "Sentiment": 1, "Timestamp": 1})
             data = list(cursor)
 
             if data:
-                st.success(f"✅ Retrieved {len(data)} tweets from MongoDB.")
+                st.success(f"✅ Retrieved {len(data)} tweets from batch {selected_batch}")
                 df_mongo = pd.DataFrame(data)
-
-                # ⏱️ Clean timestamps
                 if "Timestamp" in df_mongo.columns:
-                    df_mongo["Timestamp"] = pd.to_datetime(
-                        df_mongo["Timestamp"], errors="coerce"
-                    ).dt.strftime("%Y-%m-%d %H:%M")
-
-                # 😄 Add emojis
+                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
                 df_mongo["Sentiment (Emoji)"] = df_mongo["Sentiment"].apply(sentiment_with_emoji)
-
-                # 🧾 Display table only — no JSON preview
                 st.dataframe(df_mongo[["Text", "Sentiment (Emoji)", "Timestamp"]], use_container_width=True)
-
             else:
-                st.warning("⚠️ No documents found in MongoDB.")
-        except Exception as e:
-            st.error(f"❌ MongoDB fetch error: {e}")
+                st.warning(f"⚠️ No tweets found for {selected_batch}.")
+        else:
+            st.warning("⚠️ No batches found in MongoDB.")
+
+    except Exception as e:
+        st.error(f"❌ MongoDB fetch error: {e}")
