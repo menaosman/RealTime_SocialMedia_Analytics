@@ -154,18 +154,12 @@ with tab6:
                 df_mongo = pd.DataFrame(data)
 
                 if "Timestamp" in df_mongo.columns:
-                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").astype(str)
+                    df_mongo["Timestamp"] = pd.to_datetime(df_mongo["Timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
 
                 df_mongo["Sentiment (Emoji)"] = df_mongo["Sentiment"].apply(sentiment_with_emoji)
-
-                st.markdown("### 📋 MongoDB Tweet Records")
                 st.dataframe(df_mongo[["Text", "Sentiment (Emoji)", "Timestamp"]], use_container_width=True)
-
-                # ❌ DO NOT include this:
-                # st.json(df_mongo.head(2).to_dict(orient="records"))
 
             else:
                 st.warning("⚠️ No documents found in MongoDB.")
-
         except Exception as e:
             st.error(f"❌ MongoDB fetch error: {e}")
