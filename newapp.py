@@ -127,6 +127,9 @@ with tab5:
             client = MongoClient(mongo_uri)
             collection = client["sentiment_analysis"]["tweets"]
 
+            # 🔁 Delete old records before upload
+            collection.delete_many({})  # Clears existing documents
+
             # Add batch timestamp
             now = datetime.now().strftime("%Y-%m-%d %H:%M")
             upload_df = df[["Text", "Sentiment", "Timestamp"]].dropna().copy()
@@ -140,6 +143,7 @@ with tab5:
                 st.warning("⚠️ No data to upload.")
         except Exception as e:
             st.error(f"❌ Upload failed: {e}")
+
 
 with tab6:
     st.subheader("📥 Fetch Tweets from MongoDB Atlas")
