@@ -162,3 +162,4 @@ with tab6:
 
         except Exception as e:
             st.error(f"❌ MongoDB fetch error: {e}")
+            
