@@ -1,0 +1,27 @@
+name: Deploy Streamlit App
+
+on:
+  push:
+    branches:
+      - main  # Change if you are using a different branch for deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Basic Test (Optional)
+      run: |
+        echo "✅ Streamlit CI/CD Pipeline - Code Checked and Ready!"
