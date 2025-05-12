@@ -44,6 +44,8 @@ Upload your dataset to:
 - ☁️ Generate WordClouds  
 - 📈 Track sentiment trends over time  
 - 🔍 Filter tweets by keywords
+-📦 Push to MongoDB Atlas
+-📤 Upload to MongoDB
 """)
 
 # 📥 Load latest CSV
