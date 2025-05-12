@@ -1,4 +1,4 @@
-# ✅ Test CI/CD: Automatic Deployment to Railway
+# ✅ Test CI/CD Deployment for Streamlit App
 import streamlit as st
 import pandas as pd
 import os
